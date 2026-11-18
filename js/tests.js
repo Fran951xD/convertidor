@@ -235,6 +235,17 @@
       assert(aoa[0][0] === 'Región' && aoa[3][3] === 1620, `valores: ${JSON.stringify(aoa)}`);
       return '1 hoja, tabla 4×4 con números';
     }],
+    ['9c. PDF a Excel: números en formato español e inglés', () => {
+      const es = Conv.numberParser([['Norte', '1.200', '980', '1.234,56']]);
+      assert(es('1.200') === 1200 && es('980') === 980 && es('1.234,56') === 1234.56, 'formato español');
+      const en = Conv.numberParser([['A', '3.14', '2.5']]);
+      assert(en('3.14') === 3.14, 'decimales con punto');
+      const enk = Conv.numberParser([['A', '1,200', '12,345.5']]);
+      assert(enk('1,200') === 1200 && enk('12,345.5') === 12345.5, 'miles con coma');
+      const dec = Conv.numberParser([['A', '1,5', '20']]);
+      assert(dec('1,5') === 1.5 && dec('Total') === 'Total', 'decimal con coma y texto');
+      return '1.200→1200, 1.234,56→1234,56, 3.14, 1,200→1200, 1,5→1,5';
+    }],
     ['9b. PDF a Excel sin tablas → aviso', async () => {
       const { PDFDocument, StandardFonts } = await need('pdflib');
       const doc = await PDFDocument.create();

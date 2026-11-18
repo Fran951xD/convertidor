@@ -11,16 +11,16 @@
   const h = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
 
   // Dos hojas superpuestas: la de atrás es el origen y la de delante el destino.
-  function sheet(x, y, fmt) {
+  function sheet(x, y, fmt, cx = 14) {
     const c = `var(${FMT_COLOR[fmt]})`;
-    const fs = fmt.length > 3 ? 7.5 : 9;
+    const fs = fmt.length > 3 ? 7 : 9;
     return `<g transform="translate(${x} ${y})"><path d="M0 4a4 4 0 0 1 4-4h15l9 9v25a4 4 0 0 1-4 4H4a4 4 0 0 1-4-4z" fill="${c}"/>` +
       `<path d="M19 0v6a3 3 0 0 0 3 3h6" fill="rgb(255 255 255 / .35)"/>` +
-      `<text x="14" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs}" fill="#fff">${fmt}</text></g>`;
+      `<text x="${cx}" y="29" text-anchor="middle" font-family="system-ui,sans-serif" font-weight="800" font-size="${fs}" fill="#fff">${fmt}</text></g>`;
   }
   function icon(tool) {
     const [a, b] = tool.group === 'to' ? [tool.fmt, 'PDF'] : ['PDF', tool.fmt];
-    return `<svg class="ico" viewBox="0 0 56 48" aria-hidden="true">${sheet(2, 2, a)}<g opacity=".97">${sheet(26, 8, b)}</g></svg>`;
+    return `<svg class="ico" viewBox="0 0 56 48" aria-hidden="true">${sheet(2, 2, a, 12)}<g opacity=".97">${sheet(26, 8, b)}</g></svg>`;
   }
 
   // ---------- Portada ----------

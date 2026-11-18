@@ -29,7 +29,21 @@
     html2canvas: { url: 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js', global: 'html2canvas' },
     jspdf: { url: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js', global: 'jspdf' },
     autotable: { url: 'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js', global: 'jspdf', deps: ['jspdf'] },
-    pptxPreview: { url: 'https://cdn.jsdelivr.net/npm/pptx-preview@1.0.7/dist/pptx-preview.umd.js', global: 'pptxPreview' },
+    pptxPreview: {
+      url: 'https://cdn.jsdelivr.net/npm/pptx-preview@1.0.7/dist/pptx-preview.umd.js', global: 'pptxPreview',
+      patch: [
+        // El visor nunca aplica el estilo de cuerpo del patrón: el texto de los marcadores salía a 18 px.
+        ['["subTitle","ctrTitle","title"].includes(i)&&Object.assign(n,Yn.get(r.slideLayout.slideMaster,["textStyles","titleStyle",',
+          'Object.assign(n,Yn.get(r.slideLayout.slideMaster,["textStyles",["ctrTitle","title"].includes(i)?"titleStyle":"bodyStyle",'],
+        // Título por defecto en chino para gráficos sin título.
+        ['"图表标题"', '""'],
+        // Barras sin color propio: PowerPoint usa los colores de acento del tema; el visor fallaba y no dibujaba las barras.
+        ['return t.map((function(t){return dr(ir(Yn.get(t,["c:spPr","a:solidFill"]),e.theme,e.ctx))}))',
+          'return t.map((function(t,k){return dr(ir(Yn.get(t,["c:spPr","a:solidFill"])||{"a:schemeClr":{attrs:{val:"accent"+(k%6+1)}}},e.theme,e.ctx))}))'],
+        // Gráficos sin animación: si no, se capturan vacíos (o nunca terminan en una pestaña en segundo plano).
+        ['this._model.setOption(t,{replaceMerge:i},kw)', '(t&&(t.animation=!1),this._model.setOption(t,{replaceMerge:i},kw))'],
+      ],
+    },
   };
   const loading = {};
 
@@ -51,7 +65,12 @@
         // docx y docx-preview usan el mismo nombre global: se aíslan.
         const prev = window[lib.global];
         if (lib.isolate) delete window[lib.global];
-        await addScript(lib.url);
+        if (lib.patch) {
+          let src;
+          try { src = await (await fetch(lib.url)).text(); } catch { throw new ConvError('No se pudo cargar un componente necesario. Comprueba tu conexión a internet y vuelve a intentarlo.'); }
+          for (const [from, to] of lib.patch) src = src.split(from).join(to);
+          await addScript(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+        } else await addScript(lib.url);
         const mod = window[lib.global];
         if (lib.isolate) { if (prev === undefined) delete window[lib.global]; else window[lib.global] = prev; }
         if (lib.init) await lib.init(mod);
@@ -436,7 +455,7 @@
       const viewer = pp.init(host, { width: 1280, height: 720 });
       await viewer.preview(buf);
       await document.fonts.ready;
-      await new Promise((r) => setTimeout(r, 300)); // imágenes y gráficos internos
+      await new Promise((r) => setTimeout(r, 300)); // imágenes internas
       const slides = [...host.querySelectorAll('.pptx-preview-slide-wrapper')];
       if (!slides.length) throw new ConvError(`La presentación «${file.name}» no tiene diapositivas.`);
       const pages = [];
@@ -774,6 +793,7 @@
     const XLSX = await need('xlsx');
     const wb = XLSX.utils.book_new();
     tables.forEach((t, i) => {
+      const toNumber = numberParser(t.data);
       const aoa = t.data.map((row) => row.map(toNumber));
       const ws = XLSX.utils.aoa_to_sheet(aoa);
       ws['!cols'] = t.data[0].map((_, c) => ({ wch: Math.min(Math.max(...t.data.map((r) => r[c].length), 6) + 2, 60) }));
@@ -788,12 +808,21 @@
       warnings: [`Se encontraron ${tables.length} tabla(s); cada una está en su propia hoja.`],
     }];
   }
-  function toNumber(s) {
-    const t = s.trim();
-    if (/^-?\d+(\.\d+)?$/.test(t)) return Number(t);
-    if (/^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(t)) return Number(t.replace(/\./g, '').replace(',', '.'));
-    if (/^-?\d+,\d+$/.test(t)) return Number(t.replace(',', '.'));
-    return s;
+  // "1.200" puede ser mil doscientos (es) o uno coma dos (en): se decide por tabla.
+  // Si todos los números con punto tienen grupos de 3 cifras, el punto es separador de miles (y la coma, de decimales).
+  function numberParser(data) {
+    const nums = data.flat().map((s) => s.trim()).filter((s) => /^-?\d[\d.,]*$/.test(s));
+    const dotted = nums.filter((s) => s.includes('.')), commas = nums.filter((s) => s.includes(','));
+    const dotThousands = dotted.length > 0 && dotted.every((s) => /^-?\d{1,3}(\.\d{3})+(,\d+)?$/.test(s));
+    const commaThousands = !dotThousands && commas.length > 0 && commas.every((s) => /^-?\d{1,3}(,\d{3})+(\.\d+)?$/.test(s));
+    return (s) => {
+      let t = s.trim();
+      if (!/^-?\d[\d.,]*$/.test(t)) return s;
+      if (dotThousands) t = t.replace(/\./g, '').replace(',', '.');
+      else if (commaThousands) t = t.replace(/,/g, '');
+      else if (/^-?\d+,\d+$/.test(t)) t = t.replace(',', '.');
+      return /^-?\d+(\.\d+)?$/.test(t) ? Number(t) : s;
+    };
   }
 
   // ---------- 10. PDF → PDF/A (Ghostscript en WebAssembly) ----------
@@ -947,5 +976,5 @@
     },
   };
 
-  window.Conv = { TOOLS, ConvError, need, openPdf, renderPage, prepareHtml, validatePdfa, MAX_BYTES, extOf, findTables, pageLines };
+  window.Conv = { TOOLS, ConvError, need, openPdf, renderPage, prepareHtml, validatePdfa, MAX_BYTES, extOf, findTables, pageLines, numberParser };
 })();
