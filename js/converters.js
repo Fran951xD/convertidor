@@ -52,7 +52,7 @@
       const s = document.createElement('script');
       s.src = url;
       s.onload = resolve;
-      s.onerror = () => reject(new ConvError('No se pudo cargar un componente necesario. Comprueba tu conexión a internet y vuelve a intentarlo.'));
+      s.onerror = () => reject(new ConvError('No se pudo cargar un componente necesario. Revisá tu conexión a internet y volvé a intentarlo.'));
       document.head.append(s);
     });
   }
@@ -67,7 +67,7 @@
         if (lib.isolate) delete window[lib.global];
         if (lib.patch) {
           let src;
-          try { src = await (await fetch(lib.url)).text(); } catch { throw new ConvError('No se pudo cargar un componente necesario. Comprueba tu conexión a internet y vuelve a intentarlo.'); }
+          try { src = await (await fetch(lib.url)).text(); } catch { throw new ConvError('No se pudo cargar un componente necesario. Revisá tu conexión a internet y volvé a intentarlo.'); }
           for (const [from, to] of lib.patch) src = src.split(from).join(to);
           await addScript(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
         } else await addScript(lib.url);
@@ -85,7 +85,7 @@
   const extOf = (name) => (name.match(/\.([^.]+)$/) || [])[1]?.toLowerCase() || '';
   const nextFrame = () => new Promise((r) => setTimeout(r, 0));
   const canvasBlob = (canvas, type = 'image/jpeg', q = 0.92) =>
-    new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new ConvError('El dispositivo se quedó sin memoria al generar la imagen. Prueba con una calidad menor.'))), type, q));
+    new Promise((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new ConvError('El dispositivo se quedó sin memoria al generar la imagen. Probá con una calidad menor.'))), type, q));
 
   const SIGS = {
     pdf: (b) => findAscii(b, '%PDF-', 1024),
@@ -115,7 +115,7 @@
     if (kind === 'cfb') {
       if (!SIGS.cfb(b)) throw new ConvError(`«${file.name}» no es un archivo de Excel válido o está dañado.`);
     } else if (kind === 'zip' && SIGS.cfb(b)) {
-      throw new ConvError(`«${file.name}» está protegido con contraseña o es de un formato antiguo. Ábrelo en Office, quita la contraseña y guárdalo como .${ext}.`);
+      throw new ConvError(`«${file.name}» está protegido con contraseña o es de un formato antiguo. Abrilo en Office, sacale la contraseña y guardalo como .${ext}.`);
     } else if (kind && !SIGS[kind](b)) {
       const real = Object.keys(SIGS).find((k) => k !== 'cfb' && SIGS[k](b));
       throw new ConvError(real
@@ -132,7 +132,7 @@
       // pdf.js se queda con el buffer que recibe: se le pasa una copia.
       return await pdfjs.getDocument({ data: new Uint8Array(buf.slice(0)), isEvalSupported: false }).promise;
     } catch (e) {
-      if (e?.name === 'PasswordException') throw new ConvError('El PDF está protegido con contraseña. Quita la protección y vuelve a intentarlo.');
+      if (e?.name === 'PasswordException') throw new ConvError('El PDF está protegido con contraseña. Sacale la protección y volvé a intentarlo.');
       if (e?.name === 'InvalidPDFException' || e?.name === 'FormatError') throw new ConvError('El PDF está dañado o no es un PDF válido.');
       throw e;
     }
@@ -517,7 +517,7 @@
     try {
       wb = XLSX.read(buf, { type: 'array', cellNF: true, cellDates: false });
     } catch (e) {
-      if (/password|encrypt/i.test(e.message)) throw new ConvError(`«${file.name}» está protegido con contraseña. Quita la protección y vuelve a intentarlo.`);
+      if (/password|encrypt/i.test(e.message)) throw new ConvError(`«${file.name}» está protegido con contraseña. Sacale la protección y volvé a intentarlo.`);
       throw new ConvError(`«${file.name}» está dañado o no es un libro de Excel válido.`);
     }
     const setup = await excelPageSetup(buf);
@@ -774,7 +774,7 @@
       page.cleanup();
     }
     if (editable) {
-      if (!textFound) throw new ConvError(SCANNED + ' Usa el modo «Idéntico».');
+      if (!textFound) throw new ConvError(SCANNED + ' Usá el modo «Idéntico».');
       warnings.push('Modo editable: solo se copia el texto (sin imágenes ni formas). El diseño puede variar respecto al original.');
     }
     progress(0.95, 'Creando la presentación');
@@ -843,7 +843,7 @@
   let gsFactory = null;
 
   async function runGhostscript(input, part) {
-    if (!gsFactory) gsFactory = import(GS_BASE + 'gs.mjs').then((m) => m.default).catch((e) => { gsFactory = null; throw new ConvError('No se pudo cargar Ghostscript. Comprueba tu conexión a internet.'); });
+    if (!gsFactory) gsFactory = import(GS_BASE + 'gs.mjs').then((m) => m.default).catch((e) => { gsFactory = null; throw new ConvError('No se pudo cargar Ghostscript. Revisá tu conexión a internet.'); });
     const factory = await gsFactory;
     const log = [];
     const gs = await factory({ locateFile: (f) => GS_BASE + f, print: (t) => log.push(t), printErr: (t) => log.push(t) });
@@ -904,7 +904,7 @@
     if (code !== 0) warnings.push('Ghostscript terminó con avisos.');
     warnings.push(problems.length
       ? `⚠ El resultado NO cumple PDF/A-${level}: ${problems.join('; ')}.`
-      : `Validación básica superada (PDF/A-${level}): metadatos, perfil de color, sin cifrado y fuentes incrustadas. Para una certificación formal usa veraPDF.`);
+      : `Validación básica superada (PDF/A-${level}): metadatos, perfil de color, sin cifrado y fuentes incrustadas. Para una certificación formal usá veraPDF.`);
     return [{ name: `${baseName(file.name)}-pdfa${level}.pdf`, blob: new Blob([out], { type: 'application/pdf' }), warnings, ok: !problems.length }];
   }
 
@@ -913,7 +913,7 @@
     'jpg-pdf': {
       group: 'to', title: 'JPG a PDF', fmt: 'JPG', exts: ['jpg', 'jpeg', 'png'], combine: true, run: jpgToPdf,
       desc: 'Une fotos e imágenes en un solo PDF, sin perder calidad.',
-      note: 'Las imágenes se insertan tal cual, sin recomprimir. Ordénalas arrastrando o con las flechas.',
+      note: 'Las imágenes se insertan tal cual, sin recomprimir. Ordenalas arrastrando o con las flechas.',
       options: [
         { key: 'size', label: 'Tamaño de página', choices: [['a4', 'A4'], ['carta', 'Carta'], ['imagen', 'Igual a la imagen']] },
         { key: 'orientation', label: 'Orientación', choices: [['auto', 'Automática'], ['vertical', 'Vertical'], ['horizontal', 'Horizontal']] },
@@ -922,7 +922,7 @@
     },
     'word-pdf': {
       group: 'to', title: 'Word a PDF', fmt: 'DOC', exts: ['docx'], run: wordToPdf,
-      desc: 'Convierte documentos .docx en PDF.',
+      desc: 'Convierte documentos .docx a PDF.',
       note: 'Conversión aproximada: el navegador dibuja el documento. Las fuentes que no tenga tu dispositivo se sustituyen, los saltos de página pueden no coincidir con Word y el texto del PDF queda como imagen (no seleccionable).',
       approx: true,
     },
@@ -941,7 +941,7 @@
     'html-pdf': {
       group: 'to', title: 'HTML a PDF', fmt: 'HTML', exts: ['html', 'htm'], run: htmlToPdf, print: true,
       desc: 'Usa el motor de impresión del navegador.',
-      note: 'Se abre el diálogo de impresión: elige «Guardar como PDF». Las imágenes con rutas relativas no se cargan; las incrustadas o con URL completa sí. Las URL no se admiten (el navegador no permite leer otras webs).',
+      note: 'Se abre el diálogo de impresión: elegí «Guardar como PDF». Las imágenes con rutas relativas no se cargan; las incrustadas o con URL completa sí. Las URL no se admiten (el navegador no permite leer otras webs).',
       options: [{ key: 'size', label: 'Tamaño de página', choices: [['a4', 'A4'], ['carta', 'Carta']] }],
     },
     'pdf-jpg': {

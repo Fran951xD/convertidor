@@ -30,8 +30,8 @@
       .filter(([, t]) => t.group === group)
       .map(([id, t]) => `<li><a class="tool" href="#/${id}">${icon(t)}<span class="txt"><strong>${t.title}</strong><small>${t.desc}</small></span></a></li>`)
       .join('')}</ul></section>`;
-    app.innerHTML = `<section class="hero"><h1>Convierte documentos sin subirlos a ningún sitio</h1>
-      <p>Diez herramientas para pasar archivos a PDF y desde PDF. Todo ocurre en tu navegador, también en el móvil.</p></section>
+    app.innerHTML = `<section class="hero"><h1>Convertí documentos sin subirlos a ningún lado</h1>
+      <p>Diez herramientas para pasar archivos a PDF y desde PDF. Todo pasa en tu navegador, también en el celular.</p></section>
       <div class="columns">${col('to', 'Convertir a PDF')}${col('from', 'Convertir desde PDF')}</div>`;
   }
 
@@ -53,7 +53,7 @@
         .join('')}</div></fieldset>`).join('')}</div>` : ''}
       <label class="drop" tabindex="0">
         <svg viewBox="0 0 24 24" width="34" height="34" aria-hidden="true"><path d="M12 16V4m0 0-4.5 4.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <span class="big">Arrastra tus archivos aquí o <u>elígelos</u></span>
+        <span class="big">Arrastrá tus archivos acá o <u>elegilos</u></span>
         <small>${tool.exts.map((e) => '.' + e).join(', ')} · varios a la vez · máximo 50 MB cada uno</small>
         <input type="file" multiple accept="${accept}">
       </label>
@@ -144,7 +144,7 @@
     const message = (e) => {
       if (e instanceof ConvError) return e.message;
       console.error(e);
-      if (/memory|allocation|RangeError/i.test(String(e))) return 'El dispositivo se quedó sin memoria. Prueba con un archivo más pequeño o una calidad menor.';
+      if (/memory|allocation|RangeError/i.test(String(e))) return 'El dispositivo se quedó sin memoria. Probá con un archivo más chico o una calidad menor.';
       return 'Error inesperado al convertir: ' + (e?.message || e);
     };
 
@@ -213,7 +213,7 @@
             if (!window.open(u, '_blank')) alert('El navegador bloqueó la ventana nueva. Permite las ventanas emergentes para esta página.');
           };
           info.append(btn);
-          card.querySelector('.pv').textContent = 'En el diálogo elige «Guardar como PDF»';
+          card.querySelector('.pv').textContent = 'En el diálogo elegí «Guardar como PDF»';
         } else {
           card.querySelector('.osize').textContent = fmtSize(o.blob.size);
           const u = URL.createObjectURL(o.blob);

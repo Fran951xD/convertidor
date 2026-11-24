@@ -1,3 +1,4 @@
 .claude/
 fixtures/
 .playwright-mcp/
+node_modules/
